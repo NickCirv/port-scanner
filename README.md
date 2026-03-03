@@ -1,94 +1,156 @@
 # port-scanner
 
-> Find open ports on localhost or LAN. Service detection. Zero dependencies.
+Fast TCP port scanner with service detection and banner grabbing. **Zero external dependencies** — built entirely on Node.js built-in modules (`net`, `dns`, `os`, `crypto`).
+
+```
+  PORT    STATE       SERVICE               BANNER
+  ──────────────────────────────────────────────────────────────────────
+  22/tcp  open        SSH
+  80/tcp  open        HTTP
+  443/tcp open        HTTPS
+  3000/tcp open       Node.js/Grafana
+  ──────────────────────────────────────────────────────────────────────
+
+  4 open  12 filtered  84 closed  — 1.24s
+```
+
+## Requirements
+
+- Node.js >= 18
+- No `npm install` needed — zero dependencies
 
 ## Install
 
 ```bash
-# Run without installing
-npx port-scanner [options]
-
-# Or install globally
 npm install -g port-scanner
 ```
 
-## Quick Start
+Or run directly without installing:
 
-```
-$ pscan
-
-port-scanner
-host: 127.0.0.1 · ports: 23 · concurrency: 50 · timeout: 1000ms
-
-[██████████████████████████████████████████████████] 100% | checked: 23/23 | open: 4
-
-+--------+----------+----------------+----------------------------------------------------+
-| PORT   | STATE    | SERVICE        | BANNER                                             |
-+--------+----------+----------------+----------------------------------------------------+
-| 3000   | open     | HTTP           |                                                    |
-| 5432   | open     | PostgreSQL     |                                                    |
-| 6379   | open     | Redis          |                                                    |
-| 8080   | open     | HTTP-alt       |                                                    |
-+--------+----------+----------------+----------------------------------------------------+
-
-Scanned 23 ports on 127.0.0.1 — 4 open
+```bash
+npx port-scanner <host>
 ```
 
-## Options
+Or clone and run:
+
+```bash
+git clone https://github.com/NickCirv/port-scanner.git
+cd port-scanner
+node index.js <host>
+```
+
+## Usage
+
+```
+port-scanner <host> [options]
+pscan <host> [options]         # short alias
+```
+
+### Options
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--host <ip>` | Target host | `127.0.0.1` |
-| `--ports <spec>` | Ports: `80,443` or `1-1000` | dev ports |
-| `--common` | Scan top 1000 most common ports | — |
-| `--service` | Banner grab to identify services | off |
-| `--concurrency <n>` | Parallel connections | `50` |
-| `--timeout <ms>` | Per-port timeout | `1000` |
-| `--format table\|json` | Output format | `table` |
+| `--ports <spec>` | Port range (`1-1024`) or list (`22,80,443`) | top 100 |
+| `--top <n>` | Scan top N common ports (built-in list of 1000) | `100` |
+| `--timeout <ms>` | Per-port connection timeout in milliseconds | `1000` |
+| `--concurrency <n>` | Number of parallel TCP connections | `100` |
+| `--host-discovery <cidr>` | TCP ping sweep of a CIDR range | — |
+| `--banner` | Grab first 256 bytes of service banner | off |
+| `--open` | Show open ports only (hide filtered) | off |
+| `--json` | Output results as JSON | off |
 | `-h, --help` | Show help | — |
+| `-v, --version` | Show version | — |
 
 ## Examples
 
 ```bash
-# Scan localhost dev ports
-pscan
+# Scan top 100 common ports (default)
+port-scanner example.com
 
-# Scan a LAN host
-pscan --host 192.168.1.1
+# Scan a port range
+port-scanner 192.168.1.1 --ports 1-1024
 
-# Scan port range with more parallelism
-pscan --ports 1-1000 --concurrency 100
+# Scan specific ports
+port-scanner example.com --ports 22,80,443,3000,8080
 
-# Specific ports with service detection
-pscan --ports 80,443,3000,8080 --service
+# Top 500 ports with 2s timeout
+port-scanner 10.0.0.1 --top 500 --timeout 2000
 
-# Top 1000 common ports, faster timeout
-pscan --common --timeout 500
+# Banner grabbing
+port-scanner example.com --ports 22,80,443 --banner
 
-# JSON output for piping
-pscan --format json | jq '.[] | select(.port < 1024)'
+# Open ports only, JSON output
+port-scanner example.com --open --json
 
-# Full scan with service detection
-pscan --host 192.168.1.100 --ports 1-65535 --concurrency 200 --service
+# Host discovery — TCP ping sweep of subnet
+port-scanner --host-discovery 192.168.1.0/24
+
+# Fast scan with high concurrency
+port-scanner example.com --top 1000 --concurrency 200 --timeout 500
 ```
 
-## Service Detection (`--service`)
+## Features
 
-Banner grabs are performed on open ports to identify the running service:
+- **Top 1000 common ports** built-in — no config needed
+- **200+ service mappings** — SSH, HTTP, MySQL, Redis, MongoDB, Kubernetes, Docker, Elasticsearch, and more
+- **Concurrency pool** — scan hundreds of ports in parallel with configurable limit
+- **Progress bar** — live `X/Total` counter during scan
+- **Color output** — green=open, yellow=filtered, grey=closed
+- **Banner grabbing** — reads first 256 bytes from open ports
+- **Host discovery** — TCP-based ping sweep for CIDR /16 to /30 ranges
+- **JSON output** — pipe-friendly structured results
+- **Zero dependencies** — ships nothing but `index.js` and `package.json`
 
-| Port | Protocol | Detection method |
-|------|----------|-----------------|
-| 22 | SSH | Reads `SSH-` banner |
-| 80 / 8080 / 3000+ | HTTP | Sends `HEAD /`, reads status line |
-| 3306 | MySQL | Reads MySQL greeting bytes |
-| 5432 | PostgreSQL | Detects auth request bytes |
-| 6379 | Redis | Sends `PING`, reads `+PONG` |
-| 27017 | MongoDB | Detects wire protocol header |
+## Output
 
-## Note
+### Default (color table)
 
-This tool is intended for **local and development use only** — scanning your own machine or devices on your own LAN. Do not use to scan hosts you do not own or have explicit permission to test.
+```
+Scanning example.com (93.184.216.34) — 100 ports
 
----
+  PORT      STATE       SERVICE               BANNER
+  ──────────────────────────────────────────────────────────────────────
+  80/tcp    open        HTTP
+  443/tcp   open        HTTPS
+  ──────────────────────────────────────────────────────────────────────
 
-Built with Node.js · Zero dependencies · MIT License
+  2 open  3 filtered  95 closed  — 2.11s
+```
+
+### JSON (`--json`)
+
+```json
+{
+  "host": "example.com",
+  "ip": "93.184.216.34",
+  "scannedAt": "2026-03-03T09:00:00.000Z",
+  "scanTime": 2110,
+  "summary": { "open": 2, "filtered": 3, "closed": 95 },
+  "ports": [
+    { "port": 80, "status": "open", "banner": null, "service": "HTTP" },
+    { "port": 443, "status": "open", "banner": null, "service": "HTTPS" }
+  ]
+}
+```
+
+## Security
+
+- Zero external dependencies — no supply chain risk
+- Uses `net.createConnection()` — no raw sockets, no root required
+- No shell exec — all operations via Node.js APIs
+- Sensitive values via `process.env` only
+
+## Ethical Use Disclaimer
+
+**Only scan hosts and networks you own or have explicit written permission to scan.**
+
+Unauthorized port scanning may:
+- Violate computer fraud and abuse laws in your jurisdiction
+- Breach terms of service of networks and hosting providers
+- Constitute illegal access to computer systems
+
+The author assumes no liability for misuse of this tool.
+
+## License
+
+MIT
