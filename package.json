@@ -1,0 +1,34 @@
+{
+  "name": "port-scanner",
+  "version": "1.0.0",
+  "description": "Find open ports on localhost or LAN. Service detection. Zero dependencies.",
+  "type": "module",
+  "bin": {
+    "port-scanner": "./index.js",
+    "pscan": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "developer-tools",
+    "cli",
+    "nodejs",
+    "zero-dependencies",
+    "ports",
+    "networking",
+    "localhost",
+    "devtools",
+    "port-scanner",
+    "network"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NickCirv/port-scanner.git"
+  },
+  "homepage": "https://github.com/NickCirv/port-scanner#readme",
+  "bugs": {
+    "url": "https://github.com/NickCirv/port-scanner/issues"
+  }
+}
