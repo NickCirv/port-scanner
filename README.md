@@ -1,3 +1,5 @@
+![Banner](banner.svg)
+
 # port-scanner
 
 Fast TCP port scanner with service detection and banner grabbing. **Zero external dependencies** — built entirely on Node.js built-in modules (`net`, `dns`, `os`, `crypto`).
